@@ -1,0 +1,92 @@
+vault-datavolume:
+  image: alpine:latest
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.container.start_once: true
+  volumes:
+    - /var/vault:/var/vault
+  entrypoint: true
+  net: none
+vault:
+  restart: always
+  tty: true
+  image: anchovy/vault
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.sidekicks: vault-datavolume
+  ports:
+    - 8200:8200
+  volumes_from:
+    - vault-datavolume
+app-base:
+  image: anchovy/base
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.container.start_once: true
+  environment:
+    GIT_REPO: git@github.com:symfony/symfony.git
+  links:
+    - vault:vault
+  volumes:
+    - /var/www:/var/www
+app:
+  image: anchovy/app
+  restart: always
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.sidekicks: app-base
+  volumes:
+    - /etc/nginx
+  volumes_from:
+    - app-base
+  ports:
+    - 80:80
+    - 443:443
+  links:
+    - mongo:mongo
+    - mysql:mysql
+    - vault:vault
+  environment:
+     DEV: 1
+     VAULT_PASS: "myPASS123"
+     VAULT_USER: "dev"
+     SYMFONY__ENVIRONMENT: development
+mysql-datavolume:
+  image: alpine:latest
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.container.start_once: true
+  volumes:
+    - /var/lib/mysql:/var/lib/mysql
+  entrypoint: true
+  net: none
+mysql:
+  image: anchovy/mysql
+  restart: always
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.sidekicks: mysql-datavolume
+  volumes_from:
+    - mysql-datavolume
+  environment:
+    VAULT_PASS: "myPASS123"
+    VAULT_USER: "dev"
+  links:
+    - vault:vault
+mongo-datavolume:
+  net: none
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.container.start_once: true
+  volumes:
+    - /data/db:/data/db
+  entrypoint: /bin/true
+  image: alpine:latest
+mongo:
+  image: tutum/mongodb:3.0
+  volumes_from:
+    - mongo-datavolume
+  labels:
+    io.rancher.container.hostname_override: container_name
+    io.rancher.sidekicks: mongo-datavolume
+  restart: always

@@ -135,5 +135,5 @@ If you want to keep up with updates, [follow me on twitter](http://twitter.com/i
 
 ## Bug tracking ##
 
-This bundle uses [GitHub issues](https://github.com/Iman/anchovy-docker-devstack/issues).
+This project uses [GitHub issues](https://github.com/Iman/anchovy-docker-devstack/issues).
 If you have found bug, please create an issue.
